@@ -4,7 +4,6 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { StatusBar } from "react-native";
-import { Provider as TinyBaseProvider } from "tinybase/ui-react";
 
 
 export default function RootLayout() {
@@ -13,13 +12,17 @@ export default function RootLayout() {
   });
 
   return (
-    <TinyBaseProvider>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar barStyle="dark-content" />
-        <Stack screenOptions={{ headerShown: false }} >;
-          <Stack.Screen name="(auth)/login" options={{ presentation: "card" }} />
-        </Stack >
-      </QueryClientProvider>
-    </TinyBaseProvider>
+    <QueryClientProvider client={queryClient}>
+      <StatusBar barStyle="dark-content" />
+      <Stack screenOptions={{ headerShown: false }} >;
+        <Stack.Screen name="(modals)/add_salesmen" options={{ presentation: "modal" }} />
+        <Stack.Screen name="(modals)/add_store" options={{ presentation: "modal" }} />
+        <Stack.Screen name="(modals)/notification" options={{ presentation: "modal" }} />
+        <Stack.Screen name="(modals)/assign/[id]" options={{ presentation: "modal" }} />
+        <Stack.Screen name="(modals)/qr/[id]" options={{ presentation: "modal" }} />
+        <Stack.Screen name="(modals)/salesmen/[id]" options={{ presentation: "modal" }} />
+      </Stack >
+    </QueryClientProvider>
+
   )
 }

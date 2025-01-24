@@ -21,11 +21,11 @@ export default function LoginScreen() {
       console.log(data);
       await AsyncStorage.setItem(AppConfig.TOKEN_NAME, JSON.stringify(data.token));
       setIsLogedIn(true);
-      router.push("/(tabs)");
+      router.replace("/(tabs)");
     },
     onError: (error) => {
-      console.log(error.stack);
-    }
+      alert(error.message);
+    },
   })
 
   const handleLoginPress = () => {
