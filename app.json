@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "salesman-mannager-app",
-    "slug": "salesman-mannager-app",
+    "name": "salesman-app",
+    "slug": "salesman-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -15,7 +15,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.amitanshu.salesmanapp"
     },
     "web": {
       "bundler": "metro",
@@ -37,6 +38,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "637e8557-c5f2-440c-8bb2-2f4c485e6ad2"
+      }
     }
   }
 }
