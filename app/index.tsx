@@ -34,6 +34,7 @@ export default function Index() {
       }, 2000);
     } else if (loginQuery.isError) {
       setIsLogedIn(false);
+      alert(loginQuery.error?.message);
       setTimeout(() => {
         router.replace("/(auth)/welcome");
       }, 2000);

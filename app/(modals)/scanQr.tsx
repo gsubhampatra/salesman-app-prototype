@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, Alert, TouchableOpacity, ActivityIndicator } from "react-native";
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from "expo-camera";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import { useMutation } from "@tanstack/react-query";
 import { addVisitedLocation } from "@/lib/http/mutations";
-
+import Svg, { Rect, Defs, LinearGradient, Stop, Path } from 'react-native-svg';
+import { primary } from "@/constants/Colors";
 
 const QrScanner = () => {
   const [hasPermission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState<boolean>(false);
-  const [latitude, setLatitude] = useState<number | null>(null);
-  const [longitude, setLongitude] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     if (hasPermission === null) {
-      requestPermission(); // Request permission on mount
+      requestPermission();
     }
   }, [hasPermission]);
 
@@ -24,7 +23,7 @@ const QrScanner = () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
 
     if (status !== 'granted') {
-      alert('Permission Denied');
+      Alert.alert('Location Permission', 'Please grant location access');
       return null;
     }
 
@@ -34,8 +33,7 @@ const QrScanner = () => {
       });
       return loc.coords;
     } catch (error) {
-      alert('Error retrieving location');
-      console.error(error);
+      Alert.alert('Location Error', 'Could not retrieve location');
       return null;
     }
   }
@@ -43,42 +41,66 @@ const QrScanner = () => {
   const visitedStoreMutation = useMutation({
     mutationFn: addVisitedLocation,
     onSuccess: (data) => {
-      console.log("data added sucess",data);
       router.push("/(tabs)");
     },
-  })
-
-
+    onError: (error) => {
+      alert(error.message);
+    },
+  });
 
   const handleBarcodeScanned = async ({ data, type }: BarcodeScanningResult) => {
     setScanned(true);
-    Alert.alert("QR Code Scanned", `Type: ${type}\nData: ${data}`);
     const location = await getLocation()
-    console.log('Location:', location);
-    console.log('Data:', data);
+
     if (location) {
       const { latitude, longitude } = location;
-      visitedStoreMutation.mutate({ locationId: parseInt(data), date: new Date().toISOString(), userLatitude: latitude, userLongitude: longitude });
-    } else {
-      alert('Please retrieve the location first.');
+      visitedStoreMutation.mutate({
+        locationId: parseInt(data),
+        date: new Date().toISOString(),
+        userLatitude: latitude,
+        userLongitude: longitude
+      });
     }
-    
   };
 
-  if (hasPermission === null) {
-    return (
-      <View style={styles.permissionContainer}>
-        <Text style={styles.text}>Requesting camera permissions...</Text>
-      </View>
-    );
-  }
+  const ScannerFrame = () => (
+    <Svg width="300" height="300" viewBox="0 0 300 300">
+      <Defs>
+        <LinearGradient id="borderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor="#00FFD4" stopOpacity="1" />
+          <Stop offset="100%" stopColor="#6E2FFF" stopOpacity="1" />
+        </LinearGradient>
+      </Defs>
 
-  if (hasPermission.status !== "granted") {
+      {/* Outer rounded rectangle */}
+      <Rect
+        x="10"
+        y="10"
+        width="280"
+        height="280"
+        rx="30"
+        ry="30"
+        fill="none"
+        stroke="url(#borderGradient)"
+        strokeWidth="5"
+      />
+
+      {/* Corner decorative elements */}
+      <Path
+        d="M30 40 L40 30 M30 260 L40 270 M260 30 L270 40 M270 260 L260 270"
+        stroke="url(#borderGradient)"
+        strokeWidth="4"
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+
+  if (hasPermission?.status !== "granted") {
     return (
       <View style={styles.permissionContainer}>
-        <Text style={styles.text}>Camera permission is required to scan QR codes.</Text>
+        <Text style={styles.text}>Camera access required to scan QR codes</Text>
         <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-          <Text style={styles.buttonText}>Grant Permission</Text>
+          <Text style={styles.buttonText}>Grant Access</Text>
         </TouchableOpacity>
       </View>
     );
@@ -86,31 +108,36 @@ const QrScanner = () => {
 
   return (
     <View style={styles.container}>
+      {
+        visitedStoreMutation.isPending && <ActivityIndicator size="large" color={primary} style={{position: "absolute", top: 30, zIndex: 1000, alignSelf: 'center'}}/>
+      }
       <CameraView
         style={styles.camera}
         onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
         barcodeScannerSettings={{
-          barcodeTypes: ["qr"], // Specify scanning only QR codes
+          barcodeTypes: ["qr"],
         }}
         ratio={'1:1'}
       >
-        {/* Overlay to create a scanner frame */}
         <View style={styles.overlay}>
-          <View style={styles.topOverlay} />
-          <View style={styles.middleRow}>
-            <View style={styles.sideOverlay} />
-            <View style={styles.scannerFrame} />
-            <View style={styles.sideOverlay} />
+          <View style={styles.scannerFrameContainer}>
+            <ScannerFrame />
+            {scanned && (
+              <View style={styles.scanCompletedOverlay}>
+                <Text style={styles.scanCompletedText}>Scan Completed</Text>
+                <Text style={styles.scanCompletedText}>Please Wait!!</Text>
+              </View>
+            )}
           </View>
-          <View style={styles.bottomOverlay} />
         </View>
       </CameraView>
+
       {scanned && (
         <TouchableOpacity
           style={styles.scanAgainButton}
           onPress={() => setScanned(false)}
         >
-          <Text style={styles.buttonText}>Tap to Scan Again</Text>
+          <Text style={styles.buttonText}>Scan Again</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -120,69 +147,74 @@ const QrScanner = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: '#0A1128',
   },
   camera: {
     flex: 1,
   },
   overlay: {
     flex: 1,
-    justifyContent: "space-between",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(10, 17, 40, 0.7)',
   },
-  topOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-  },
-  middleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  sideOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-  },
-  scannerFrame: {
-    width: 250,
-    height: 250,
-    borderWidth: 4,
-    borderColor: "#00FF00",
-    borderRadius: 10,
-  },
-  bottomOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+  scannerFrameContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   permissionContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#000",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0A1128',
   },
   text: {
-    color: "#FFF",
-    fontSize: 16,
-    textAlign: "center",
+    color: '#00FFD4',
+    fontSize: 18,
+    textAlign: 'center',
     marginBottom: 20,
   },
   permissionButton: {
-    backgroundColor: "#00FF00",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+    backgroundColor: '#6E2FFF',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
   },
   scanAgainButton: {
-    position: "absolute",
-    bottom: 30,
-    alignSelf: "center",
-    backgroundColor: "#00FF00",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+    position: 'absolute',
+    bottom: 50,
+    alignSelf: 'center',
+    backgroundColor: '#00FFD4',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    shadowColor: '#6E2FFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
   },
   buttonText: {
-    color: "#000",
+    color: '#0A1128',
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: 'bold',
+  },
+  scanCompletedOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(110, 47, 255, 0.5)',
+    borderRadius: 30,
+  },
+  scanCompletedText: {
+    color: '#00FFD4',
+    fontSize: 24,
+    fontWeight: 'bold',
   },
 });
 

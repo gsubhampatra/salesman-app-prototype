@@ -10,6 +10,7 @@ export const API_ROUTES = {
     ME: `${BASE_URL}/api/user/me`,
   },
   LOCATION: {
-    CREATE_VISITED_LOCATION: `${BASE_URL}/api/user/visit/location`
+    CREATE_VISITED_LOCATION: `${BASE_URL}/api/user/visit/location`,
+    GET_VISITED_LOCATIONS: `${BASE_URL}/api/user/get/my/visited/location`
   }
 } as const;
