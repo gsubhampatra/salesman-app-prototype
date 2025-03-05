@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { CloudArrowUp, CloudCheck, GpsFix, Scan } from 'phosphor-react-native';
 import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface VisitedLocationData {
   visitedLocation: ({
@@ -71,11 +71,11 @@ export default function TabTwoScreen() {
         </View>
       </View>
 
-      <TouchableOpacity onPress={() => router.push("/(modals)/scanQr")} style={{ position: 'absolute', bottom: 30, padding: 10, borderRadius: 999 }}>
+      <TouchableOpacity onPress={() => router.push("/(modals)/scanQr")} style={{ position: 'fixed', bottom: 30, padding: 10, borderRadius: 999,zIndex:200 }}>
         <Scan size={52} color={`${primary}`} />
       </TouchableOpacity>
 
-      <View style={{ marginTop: 30, width: "100%" }}>
+      <ScrollView style={{ marginTop: 30, width: "100%" }}>
 
 
         {
@@ -136,7 +136,7 @@ export default function TabTwoScreen() {
         {
           visitedLocationsQuery.isFetching && <ActivityIndicator size="large" color={primary} />
         }
-      </View>
+      </ScrollView>
 
     </View>
   );
